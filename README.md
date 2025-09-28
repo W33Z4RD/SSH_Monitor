@@ -1,13 +1,13 @@
 #  SSH Monitor 
 
-Open-source Linux SSH Monitor Service 
+Linux SSH Monitor Service 
 
 ## Features
 
 - **Real-time Monitoring:** Watches the system's authentication log (`/var/log/auth.log` or `/var/log/secure`) for SSH login events.
-- **Dual Alerting:** Sends notifications for both **successful** and **failed** login attempts.
-- **Rich Notifications:** Alerts include:
-    - User name (for both valid and invalid users).
+- ** Alerting:** Sends notifications for **successful** and **failed** login attempts.
+- **Detailed Notifications:** Alerts include:
+    - User name.
     - Source IP address.
     - Geolocation data of the IP (City, Region, Country).
     - ISP information.
@@ -16,7 +16,7 @@ Open-source Linux SSH Monitor Service
 - **Smart IP Type Detection:** Differentiates between `Local Network` and `External` IP addresses.
 - **Easy Configuration:** Uses a `.env` file to securely store your Telegram credentials.
 - **Robust & Self-Contained:** Includes helper functions to test your configuration, get your Chat ID, and debug log parsing.
-- **Service Mode:** Can be run as a background service to ensure continuous monitoring.
+- **Service Mode:** Can run as a bash script but the recomended configuration is always the Systemd background service to ensure continuous monitoring.
 - **Logging:** Keeps a record of its own activities in `/var/log/ssh-telegram-monitor.log`.
 
 ## Prerequisites
@@ -40,7 +40,7 @@ Before you begin, ensure you have the following installed on your server:
 
 3.  **Clone the Repository (if you haven't already):**
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/W33Z4RD/SSH_Monitor/
     cd ssh-monitor
     ```
 
