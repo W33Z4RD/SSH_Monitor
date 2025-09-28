@@ -45,4 +45,96 @@ Before you begin, ensure you have the following installed on your server:
     ```
 
 4.  **Make the Script Executable:**
+
     ```bash
+    chmod +x ssh-monitor.sh
+    ```
+
+5.  **Create the `.env` file:**
+    Create a file named `.env` in the same directory as the script and add your credentials:
+    ```env
+    TELEGRAM_BOT_TOKEN="YOUR_TELEGRAM_BOT_TOKEN"
+    TELEGRAM_CHAT_ID="YOUR_TELEGRAM_CHAT_ID"
+    ```
+    Replace the placeholder values with your actual bot token and chat ID.
+
+## Usage
+
+The script requires `root` privileges to read the system authentication logs.
+
+- **Run in Foreground:**
+  For testing or manual monitoring.
+  ```bash
+  sudo ./ssh-monitor.sh monitor
+  ```
+
+- **Run as a Background Service:**
+  To start the monitor as a daemon process.
+  ```bash
+  sudo ./ssh-monitor.sh service
+  ```
+
+- **Test Your Configuration:**
+  Send a test message to your Telegram chat to verify that the bot token and chat ID are correct.
+  ```bash
+  sudo ./ssh-monitor.sh test
+  ```
+
+- **Debug Log Parsing:**
+  To check if the script can correctly parse your system's log files. This is useful if you are not receiving notifications.
+  ```bash
+  sudo ./ssh-monitor.sh debug
+  ```
+
+- **Get Chat ID Instructions:**
+  ```bash
+  ./ssh-monitor.sh chatid
+  ```
+
+
+## Installing as a Systemd Service (Recommended)
+
+For the monitor to run automatically on boot, it's best to set it up as a `systemd` service.
+
+1.  **Create a service file:**
+    ```bash
+    sudo nano /etc/systemd/system/ssh-monitor.service
+    ```
+
+2.  **Add the following content.** Make sure to replace `/path/to/ssh-monitor.sh` with the actual absolute path to the script.
+    ```ini
+    [Unit]
+    Description=SSH Login Monitor with Telegram Notifications
+    After=network.target
+
+    [Service]
+    ExecStart=/path/to/ssh-monitor.sh monitor
+    WorkingDirectory=/path/to/
+    Restart=always
+    User=root
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+3.  **Enable and Start the Service:**
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl enable ssh-monitor.service
+    sudo systemctl start ssh-monitor.service
+    ```
+
+4.  **Check the Service Status:**
+    ```bash
+    sudo systemctl status ssh-monitor.service
+    ```
+
+## Log File
+
+The script logs its actions, such as startup, shutdown, and notification status, to:
+`/var/log/ssh-telegram-monitor.log`
+
+You can check this log file for troubleshooting.
+```bash
+tail -f /var/log/ssh-telegram-monitor.log
+```
