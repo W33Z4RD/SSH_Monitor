@@ -1,6 +1,6 @@
 # Linux SSH Monitor Service
 
-Open-source Linux SSH Monitor Service ( sysmd based systems )
+Open-source Linux SSH Monitor Service 
 
 ## Features
 
