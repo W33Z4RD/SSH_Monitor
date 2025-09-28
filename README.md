@@ -1,6 +1,6 @@
-# SSH Login Monitor with Telegram Notifications
+# Linux SSH Monitor Service
 
-This script actively monitors SSH login activities on a server and sends instant, detailed notifications to a specified Telegram chat. It tracks both successful and failed login attempts, >
+Open-source Linux SSH Monitor Service ( sysmd based systems )
 
 ## Features
 
