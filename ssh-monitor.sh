@@ -219,6 +219,21 @@ Monitoring SSH logins..."
             else
                 log_message "❌ Missing required info for failed login - username: '$username', IP: '$source_ip'"
             fi
+        # Monitor for failed attempts with "Invalid user" pattern
+        elif echo "$line" | grep -q "sshd.*Invalid user"; then
+            log_message "⚠️ Detected failed login: $line"
+            
+            # Extract failed login info
+            username=$(echo "$line" | sed -n 's/.*Invalid user \(.*\) from .*/\1/p')
+            source_ip=$(echo "$line" | sed -n 's/.* from \(.*\) port .*/\1/p')
+            login_time=$(echo "$line" | awk '{print $1, $2, $3}')
+            
+            if [[ -n "$username" && -n "$source_ip" ]]; then
+                log_message "📤 Sending failed login notification for user: $username from IP: $source_ip"
+                send_failed_login_notification "$username" "$source_ip" "$login_time"
+            else
+                log_message "❌ Missing required info for failed login - username: '$username', IP: '$source_ip'"
+            fi
         fi
     done
 }
