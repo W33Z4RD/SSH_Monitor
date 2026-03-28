@@ -1,13 +1,13 @@
-#  SSH Monitor 
+x# SSH Login Monitor with Telegram Notifications
 
-Linux SSH Monitor Service 
+This script actively monitors SSH login activities on a server and sends instant, detailed notifications to a specified Telegram chat. It tracks both successful and failed login attempts, providing valuable security alerts in real-time.
 
 ## Features
 
 - **Real-time Monitoring:** Watches the system's authentication log (`/var/log/auth.log` or `/var/log/secure`) for SSH login events.
-- ** Alerting:** Sends notifications for **successful** and **failed** login attempts.
-- **Detailed Notifications:** Alerts include:
-    - User name.
+- **Dual Alerting:** Sends notifications for both **successful** and **failed** login attempts.
+- **Rich Notifications:** Alerts include:
+    - User name (for both valid and invalid users).
     - Source IP address.
     - Geolocation data of the IP (City, Region, Country).
     - ISP information.
@@ -16,7 +16,7 @@ Linux SSH Monitor Service
 - **Smart IP Type Detection:** Differentiates between `Local Network` and `External` IP addresses.
 - **Easy Configuration:** Uses a `.env` file to securely store your Telegram credentials.
 - **Robust & Self-Contained:** Includes helper functions to test your configuration, get your Chat ID, and debug log parsing.
-- **Service Mode:** Can run as a bash script but the recomended configuration is always the Systemd background service to ensure continuous monitoring.
+- **Service Mode:** Can be run as a background service to ensure continuous monitoring.
 - **Logging:** Keeps a record of its own activities in `/var/log/ssh-telegram-monitor.log`.
 
 ## Prerequisites
@@ -40,12 +40,11 @@ Before you begin, ensure you have the following installed on your server:
 
 3.  **Clone the Repository (if you haven't already):**
     ```bash
-    git clone https://github.com/W33Z4RD/SSH_Monitor/
+    git clone <repository_url>
     cd ssh-monitor
     ```
 
 4.  **Make the Script Executable:**
-
     ```bash
     chmod +x ssh-monitor.sh
     ```
@@ -90,7 +89,6 @@ The script requires `root` privileges to read the system authentication logs.
   ```bash
   ./ssh-monitor.sh chatid
   ```
-
 
 ## Installing as a Systemd Service (Recommended)
 
