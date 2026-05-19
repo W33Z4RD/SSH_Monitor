@@ -31,6 +31,16 @@ SERVER_IP="$(curl -s ifconfig.me 2>/dev/null || echo 'Unknown')"
 
 # Log file for this monitor
 MONITOR_LOG="/var/log/ssh-telegram-monitor.log"
+# Ban tracking: IP -> attempt count
+declare -A BAN_TRACKER
+BAN_FILE="/tmp/ssh_ban_tracker.txt"
+
+# Load existing bans on startup
+if [ -f "$BAN_FILE" ]; then
+    while IFS=":" read -r ip count; do
+        BAN_TRACKER["$ip"]=$count
+    done < "$BAN_FILE"
+fi
 
 
 
@@ -168,7 +178,9 @@ Monitoring SSH logins..."
     fi
     
     # Monitor auth.log for SSH logins with better regex patterns
-    tail -F "$AUTH_LOG" 2>/dev/null | while IFS= read -r line; do
+    # Use process substitution to keep the while loop in the current shell,
+    # so BAN_TRACKER updates persist across iterations (a pipe would create a subshell).
+    while IFS= read -r line; do
         # Debug: log what we're processing
         log_message "Processing: $line"
         
@@ -215,6 +227,20 @@ Monitoring SSH logins..."
             
             if [[ -n "$username" && -n "$source_ip" ]]; then
                 log_message "📤 Sending failed login notification for user: $username from IP: $source_ip"
+                # Auto-ban: 3 failed attempts = permanent block
+                local current_count=$(( ${BAN_TRACKER[$source_ip]:-0} + 1 ))
+                BAN_TRACKER["$source_ip"]=$current_count
+                echo "$source_ip:$current_count" >> "$BAN_FILE"
+                if [ "$current_count" -ge 3 ]; then
+                    if ! iptables -C INPUT -s "$source_ip" -j DROP -m comment --comment "ssh-monitor-auto-ban" 2>/dev/null; then
+                        iptables -A INPUT -s "$source_ip" -j DROP -m comment --comment "ssh-monitor-auto-ban"
+                        log_message "🔴 BANNED IP $source_ip after $current_count failed attempts"
+                        # Send ban notification
+                        local ban_msg="🚫 *SSH Auto-Ban* - IP: $source_ip - Attempts: $current_count"
+                        curl -s -X POST "$TELEGRAM_API_URL" -H "Content-Type: application/json" \
+                            -d "{\"chat_id\": \"$TELEGRAM_CHAT_ID\", \"text\": $(printf '%s' "$ban_msg" | jq -Rs .), \"parse_mode\": \"Markdown\"}" > /dev/null
+                    fi
+                fi
                 send_failed_login_notification "$username" "$source_ip" "$login_time"
             else
                 log_message "❌ Missing required info for failed login - username: '$username', IP: '$source_ip'"
@@ -230,12 +256,26 @@ Monitoring SSH logins..."
             
             if [[ -n "$username" && -n "$source_ip" ]]; then
                 log_message "📤 Sending failed login notification for user: $username from IP: $source_ip"
+                # Auto-ban: 3 failed attempts = permanent block
+                local current_count=$(( ${BAN_TRACKER[$source_ip]:-0} + 1 ))
+                BAN_TRACKER["$source_ip"]=$current_count
+                echo "$source_ip:$current_count" >> "$BAN_FILE"
+                if [ "$current_count" -ge 3 ]; then
+                    if ! iptables -C INPUT -s "$source_ip" -j DROP -m comment --comment "ssh-monitor-auto-ban" 2>/dev/null; then
+                        iptables -A INPUT -s "$source_ip" -j DROP -m comment --comment "ssh-monitor-auto-ban"
+                        log_message "🔴 BANNED IP $source_ip after $current_count failed attempts"
+                        # Send ban notification
+                        local ban_msg="🚫 *SSH Auto-Ban* - IP: $source_ip - Attempts: $current_count"
+                        curl -s -X POST "$TELEGRAM_API_URL" -H "Content-Type: application/json" \
+                            -d "{\"chat_id\": \"$TELEGRAM_CHAT_ID\", \"text\": $(printf '%s' "$ban_msg" | jq -Rs .), \"parse_mode\": \"Markdown\"}" > /dev/null
+                    fi
+                fi
                 send_failed_login_notification "$username" "$source_ip" "$login_time"
             else
                 log_message "❌ Missing required info for failed login - username: '$username', IP: '$source_ip'"
             fi
         fi
-    done
+    done < <(tail -F "$AUTH_LOG" 2>/dev/null)
 }
 
 # Function to get Telegram chat ID (helper function)
