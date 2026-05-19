@@ -1,4 +1,4 @@
-x# SSH Login Monitor with Telegram Notifications
+# SSH Login Monitor with Telegram Notifications
 
 This script actively monitors SSH login activities on a server and sends instant, detailed notifications to a specified Telegram chat. It tracks both successful and failed login attempts, providing valuable security alerts in real-time.
 
@@ -13,6 +13,7 @@ This script actively monitors SSH login activities on a server and sends instant
     - ISP information.
     - Authentication method (Password or Public Key).
     - Server name and IP.
+- **Auto-Ban:** Automatically blocks IPs via `iptables` after 3 failed attempts and sends a Telegram ban alert. Counts persist across restarts via `/tmp/ssh_ban_tracker.txt`.
 - **Smart IP Type Detection:** Differentiates between `Local Network` and `External` IP addresses.
 - **Easy Configuration:** Uses a `.env` file to securely store your Telegram credentials.
 - **Robust & Self-Contained:** Includes helper functions to test your configuration, get your Chat ID, and debug log parsing.
@@ -25,6 +26,7 @@ Before you begin, ensure you have the following installed on your server:
 
 - `curl`: For making API requests to Telegram and IP geolocation services.
 - `jq`: For parsing JSON responses. The script has a basic fallback, but `jq` is highly recommended for reliability.
+- `iptables`: For the auto-ban feature (pre-installed on most Linux distributions).
 - A Telegram account.
 
 ## Setup and Configuration
@@ -127,9 +129,28 @@ For the monitor to run automatically on boot, it's best to set it up as a `syste
     sudo systemctl status ssh-monitor.service
     ```
 
+## Auto-Ban
+
+When an IP accumulates 3 or more failed login attempts the script:
+
+1. Adds an `iptables` DROP rule: `iptables -A INPUT -s <IP> -j DROP -m comment --comment "ssh-monitor-auto-ban"`
+2. Sends a Telegram alert with the IP and total attempt count.
+
+Attempt counts are stored in `/tmp/ssh_ban_tracker.txt` and reloaded on startup, so counts survive service restarts.
+
+To view currently banned IPs:
+```bash
+sudo iptables -L INPUT -n --line-numbers | grep ssh-monitor-auto-ban
+```
+
+To manually unban an IP (replace `<line>` with the line number from the command above):
+```bash
+sudo iptables -D INPUT <line>
+```
+
 ## Log File
 
-The script logs its actions, such as startup, shutdown, and notification status, to:
+The script logs its actions, such as startup, shutdown, notification status, and ban events, to:
 `/var/log/ssh-telegram-monitor.log`
 
 You can check this log file for troubleshooting.
